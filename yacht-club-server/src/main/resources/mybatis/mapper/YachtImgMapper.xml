@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.id0304.dao.YachtImgDao">
+
+    <insert id="addYachtImgList" parameterType="List">
+        INSERT INTO yacht_img(id,yachtid,img,created,updated)
+        VALUES
+        <foreach collection="list"  item="item" separator=",">
+            (
+            null,
+            #{item.yachtId},
+            #{item.img},
+            #{item.created},
+            #{item.updated}
+            )
+        </foreach>
+    </insert>
+</mapper>

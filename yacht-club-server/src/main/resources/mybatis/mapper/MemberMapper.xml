@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.id0304.dao.MemberDao">
+    <resultMap id="memberMap" type="member">
+        <id column="id" property="id"/>
+        <result column="tel" property="tel"/>
+        <result column="password" property="password"/>
+        <result column="name" property="name"/>
+        <result column="sex" property="sex"/>
+        <result column="age" property="age"/>
+        <result column="level" property="level"/>
+        <result column="created" property="created"/>
+        <result column="updated" property="updated"/>
+    </resultMap>
+
+    <resultMap type="Long" id="memberCount">
+        <result column="memberCount"/>
+    </resultMap>
+
+    <select id="getMembersByConAndPage" resultMap="memberMap,memberCount">
+        SELECT SQL_CALC_FOUND_ROWS
+        id,tel,name,sex,age,level
+        FROM member
+        <where>
+            level != 2
+            <if test="condition!=null">
+                AND (id LIKE #{condition} OR tel LIKE #{condition} OR name LIKE #{condition})
+            </if>
+            <if test="minAge!=null">
+                AND age &gt;= #{minAge}
+            </if>
+            <if test="maxAge!=null">
+                AND age &lt;= #{maxAge}
+            </if>
+            <if test="member.sex!=null">
+                AND sex = #{member.sex}
+            </if>
+            <if test="member.level!=null">
+                AND level = #{member.level}
+            </if>
+        </where>
+        limit #{index},#{counts};
+
+        SELECT FOUND_ROWS() AS memberCount;
+    </select>
+</mapper>

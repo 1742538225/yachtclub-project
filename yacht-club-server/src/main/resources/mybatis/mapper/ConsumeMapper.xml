@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.id0304.dao.ConsumeDao">
+    <resultMap id="consumeMap" type="consume">
+        <id column="id" property="id"/>
+        <result column="memberid" property="memberId"/>
+        <result column="tel" property="tel"/>
+        <result column="consume_name" property="name"/>
+        <result column="consume_yachtid" property="yachtId"/>
+        <result column="schemeid" property="schemeId"/>
+        <result column="usetime" property="useTime"/>
+        <result column="typeid" property="typeId"/>
+        <result column="orderid" property="orderId"/>
+        <result column="platformorderid" property="platformorderId"/>
+        <result column="consume_price" property="price"/>
+        <result column="consume_state" property="state"/>
+        <result column="paymessage" property="payMessage"/>
+        <result column="consume_created" property="created"/>
+        <result column="updated" property="updated"/>
+
+        <association property="yacht" javaType="com.id0304.entity.Yacht">
+            <result column="yacht_id" property="id"/>
+            <result column="yacht_name" property="name"/>
+            <result column="color" property="color"/>
+            <result column="length" property="length"/>
+            <result column="members" property="members"/>
+            <result column="address" property="address"/>
+            <result column="maintenance" property="maintenance"/>
+            <result column="yacht_state" property="state"/>
+            <result column="yacht_price" property="price"/>
+            <result column="created" property="created"/>
+            <result column="updated" property="updated"/>
+        </association>
+        <association property="yachtScheme" javaType="com.id0304.entity.YachtScheme">
+            <result column="yachtScheme_id" property="id"/>
+            <result column="yachtScheme_yachtid" property="yachtId"/>
+            <result column="time" property="time"/>
+            <result column="yachtScheme_price" property="price"/>
+            <result column="created" property="created"/>
+            <result column="updated" property="updated"/>
+        </association>
+    </resultMap>
+
+    <resultMap type="Long" id="consumeCount">
+        <result column="consumeCount"/>
+    </resultMap>
+
+    <select id="getConsumeByOrderId" resultMap="consumeMap">
+        select
+        consume.id consume_id,memberid,tel,consume.name consume_name,consume.yachtid consume_yachtid,schemeid,usetime,typeid,orderid,platformorderid,consume.price consume_price,consume.state consume_state,payMessage,
+        yacht.state yacht_state
+        from consume
+        INNER JOIN yacht
+        ON yachtid = yacht.id
+        where
+        orderId=#{orderId}
+    </select>
+
+    <select id="getMemberConsumesByMemberId" resultMap="consumeMap" parameterType="Long">
+        SELECT
+        consume.id,memberid,tel,consume.name consume_name,consume.yachtid consume_yachtid,schemeid,usetime,typeid,orderid,consume.price consume_price,consume.state consume_state,consume.created consume_created,
+        yacht.id yacht_id,yacht.name yacht_name,color,length,members,address,yacht.price yacht_price,yacht.state yacht_state,
+        yacht_scheme.id yachtScheme_id,yacht_scheme.yachtid yachtScheme_id,time,yacht_scheme.price yachtScheme_price
+        FROM consume
+        LEFT JOIN yacht ON yacht.id = consume.yachtid
+        LEFT JOIN yacht_scheme ON consume.schemeid = yacht_scheme.id
+        WHERE memberid = #{memberId}
+    </select>
+
+    <select id="getUseTimeListByTimeAndYachtId" resultMap="consumeMap">
+        SELECT usetime,maintenance
+        FROM consume
+        INNER JOIN yacht_scheme
+        ON schemeid = yacht_scheme.id
+        INNER JOIN yacht
+        ON yacht.id = yacht_scheme.yachtid
+        WHERE
+        (MONTH(usetime) = MONTH(#{useTime})-1 OR MONTH(usetime) = MONTH(#{useTime}) OR MONTH(usetime) = MONTH(#{useTime})+1)
+        AND consume.state = 1
+        AND yacht_scheme.yachtid = #{yachtId}
+    </select>
+
+    <select id="getConsumeById" parameterType="Long" resultMap="consumeMap">
+        SELECT
+        consume.id consume_id,memberid,tel,consume.name consume_name,consume.yachtid consume_yachtid,schemeid,usetime,typeid,orderid,platformorderid,consume.price consume_price,consume.state consume_state,payMessage,
+        yacht.state yacht_state,
+        yacht_scheme.yachtid yachtScheme_yachtid
+        FROM consume
+        LEFT JOIN yacht
+        ON yacht.id = consume.yachtid
+        LEFT JOIN yacht_scheme
+        ON schemeid = yacht_scheme.id
+        WHERE
+        consume.id = #{id}
+    </select>
+
+    <select id="getConsumeMsgByOrderId" resultMap="consumeMap" parameterType="String">
+        SELECT
+        consume.id,memberid,tel,consume.name consume_name,consume.yachtid consume_yachtid,schemeid,usetime,typeid,orderid,consume.price consume_price,consume.state consume_state,consume.created consume_created,
+        yacht.id yacht_id,yacht.name yacht_name,color,length,members,address,yacht.price yacht_price,yacht.state yacht_state,
+        yacht_scheme.id yachtScheme_id,yacht_scheme.yachtid yachtScheme_id,time,yacht_scheme.price yachtScheme_price
+        FROM consume
+        LEFT JOIN yacht_scheme ON consume.schemeid = yacht_scheme.id
+        LEFT JOIN yacht ON yacht.id = consume.yachtid
+        WHERE orderId = #{orderId}
+    </select>
+
+    <select id="getConsumesByConAndPage" resultMap="consumeMap,consumeCount">
+        SELECT SQL_CALC_FOUND_ROWS
+        consume.id,memberid,tel,consume.name consume_name,consume.yachtid consume_yachtid,schemeid,usetime,typeid,orderid,platformorderid,consume.price consume_price,consume.state consume_state,consume.created consume_created,
+        yacht.id yacht_id,yacht.name yacht_name,color,length,members,address,yacht.price yacht_price,yacht.state yacht_state,
+        yacht_scheme.id yachtScheme_id,yacht_scheme.yachtid yachtScheme_id,time,yacht_scheme.price yachtScheme_price
+        FROM consume
+        LEFT JOIN yacht_scheme ON consume.schemeid = yacht_scheme.id
+        LEFT JOIN yacht ON yacht.id = consume.yachtid
+        <where>
+            <if test="condition!=null">
+                AND (consume.id LIKE #{condition} OR memberid LIKE #{condition} OR consume.tel LIKE #{condition}
+                OR consume.name LIKE #{condition} OR yacht.id LIKE #{condition} OR orderid LIKE #{condition} OR consume.price LIKE #{condition})
+            </if>
+            <if test="minUseTime!=null">
+                AND consume.usetime &gt;= #{minUseTime}
+            </if>
+            <if test="maxUseTime!=null">
+                AND consume.usetime &lt;= #{maxUseTime}
+            </if>
+            <if test="minCreated!=null">
+                AND consume.created &gt;= #{minCreated}
+            </if>
+            <if test="maxCreated!=null">
+                AND consume.created &lt;= #{maxCreated}
+            </if>
+            <if test="consume.state!=null">
+                AND consume.state = #{consume.state}
+            </if>
+            <if test="yacht.state!=null">
+                AND yacht.state = #{yacht.state}
+            </if>
+        </where>
+        limit #{index},#{counts};
+
+        SELECT FOUND_ROWS() AS consumeCount;
+    </select>
+
+    <delete id="deleteNullConsumesByIdList" parameterType="Long">
+        DELETE FROM consume
+        WHERE
+        state = 2
+        AND id IN
+        <foreach collection="array"  item="item" open="(" separator="," close=")"  >
+          #{item}
+        </foreach>
+    </delete>
+</mapper>

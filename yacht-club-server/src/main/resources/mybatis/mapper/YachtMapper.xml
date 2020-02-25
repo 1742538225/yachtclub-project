@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.id0304.dao.YachtDao">
+    <resultMap id="yachtMap" type="yacht">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="color" property="color"/>
+        <result column="length" property="length"/>
+        <result column="members" property="members"/>
+        <result column="address" property="address"/>
+        <result column="maintenance" property="maintenance"/>
+        <result column="state" property="state"/>
+        <result column="yacht_price" property="price"/>
+        <result column="created" property="created"/>
+        <result column="updated" property="updated"/>
+
+        <collection property="yachtImgList" ofType="com.id0304.entity.YachtImg">
+            <result column="yachtImg_id" property="id"/>
+            <result column="yachtImg_yachtid" property="yachtId"/>
+            <result column="img" property="img"/>
+            <result column="created" property="created"/>
+            <result column="updated" property="updated"/>
+        </collection>
+        <collection property="yachtSchemeList" ofType="com.id0304.entity.YachtScheme">
+            <result column="yachtScheme_id" property="id"/>
+            <result column="yachtScheme_yachtid" property="yachtId"/>
+            <result column="time" property="time"/>
+            <result column="yachtScheme_price" property="price"/>
+            <result column="created" property="created"/>
+            <result column="updated" property="updated"/>
+        </collection>
+    </resultMap>
+
+    <resultMap type="Long" id="yachtCount">
+        <result column="yachtCount"/>
+    </resultMap>
+
+    <select id="getYachtsAndMainPicByState" resultMap="yachtMap" parameterType="Integer">
+        SELECT
+        yacht.id,name,color,length,members,address,maintenance,state,price yacht_price,yacht_img.img
+        FROM yacht
+        LEFT JOIN yacht_img
+        ON
+        yacht.id = yacht_img.yachtId
+        AND
+        yacht_img.img LIKE '%_01.jpg%'
+        WHERE
+        state = #{state}
+    </select>
+
+    <select id="getYachtAndImgById" parameterType="Long" resultMap="yachtMap">
+        SELECT
+        yacht.id,name,color,length,members,address,maintenance,state,price yacht_price,yacht_img.id img_id,yacht_img.yachtid,yacht_img.img
+        FROM yacht
+        INNER JOIN yacht_img
+        ON yacht.id = yacht_img.yachtId
+        WHERE
+        yacht.id = #{id}
+    </select>
+
+    <select id="getYachtsByConAndPage"  resultMap="yachtMap,yachtCount">
+        SELECT
+        yacht.id,yacht.name,color,length,members,address,yacht.price yacht_price,maintenance,state,
+        yacht_scheme.id yachtScheme_id,yacht_scheme.yachtid yachtScheme_yachtid,time,yacht_scheme.price yachtScheme_price,
+        yacht_img.id yachtImg_id,yacht_img.yachtid yachtImg_yachtid,img
+        FROM yacht
+        INNER JOIN yacht_img ON yacht.id = yacht_img.yachtid
+        LEFT JOIN yacht_scheme ON yacht.id = yacht_scheme.yachtid
+        <where>
+            <if test="condition!=null">
+                AND (yacht.id LIKE #{condition} OR yacht.name LIKE #{condition} OR yacht.color LIKE #{condition} OR yacht.address LIKE #{condition})
+            </if>
+            <if test="yacht.state!=null">
+                AND yacht.state = #{yacht.state}
+            </if>
+            <if test="yacht.maintenance!=null">
+                AND yacht.maintenance = #{yacht.maintenance}
+            </if>
+            <if test="minLength!=null">
+                AND yacht.length &gt;= #{minLength}
+            </if>
+            <if test="maxLength!=null">
+                AND yacht.length &lt;= #{maxLength}
+            </if>
+            <if test="minMembers!=null">
+                AND yacht.members &gt;= #{minMembers}
+            </if>
+            <if test="maxMembers!=null">
+                AND yacht.members &lt;= #{maxMembers}
+            </if>
+        </where>;
+
+        SELECT count(*) AS yachtCount FROM yacht
+        <where>
+            <if test="condition!=null">
+                AND (yacht.id LIKE #{condition} OR yacht.name LIKE #{condition} OR yacht.color LIKE #{condition} OR yacht.address LIKE #{condition})
+            </if>
+            <if test="yacht.state!=null">
+                AND yacht.state = #{yacht.state}
+            </if>
+            <if test="yacht.maintenance!=null">
+                AND yacht.maintenance = #{yacht.maintenance}
+            </if>
+            <if test="minLength!=null">
+                AND yacht.length &gt;= #{minLength}
+            </if>
+            <if test="maxLength!=null">
+                AND yacht.length &lt;= #{maxLength}
+            </if>
+            <if test="minMembers!=null">
+                AND yacht.members &gt;= #{minMembers}
+            </if>
+            <if test="maxMembers!=null">
+                AND yacht.members &lt;= #{maxMembers}
+            </if>
+        </where>;
+    </select>
+
+    <delete id="deleteYachtMessage">
+        DELETE FROM yacht WHERE id = #{yachtId};
+        DELETE FROM yacht_scheme WHERE yachtid = #{yachtId};
+        DELETE FROM yacht_img WHERE yachtid = #{yachtId};
+        DELETE FROM consume WHERE yachtid = #{yachtId} AND state = 2;
+    </delete>
+</mapper>
